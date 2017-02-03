@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="style.css">
+    <script src="bingo.js"></script>
+  </head>
+  <body>
+    <div id="elm-app-goes-here"></div>
+    <script>
+      var node = document.getElementById('elm-app-goes-here');
+      var app = Elm.Bingo.embed(node);
+    </script>
+  </body>
+</html>
