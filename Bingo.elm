@@ -2,7 +2,7 @@ module Bingo exposing (..)
 
 import Html exposing (..)
 import Html.Attributes exposing (..)
-import Html.Events exposing (onClick)
+import Html.Events exposing (onClick, onInput)
 import Random
 import Http
 import Json.Decode as Decode exposing (Decoder, field, succeed)
@@ -17,6 +17,7 @@ type alias Model =
   , gameNumber : GameNumber
   , entries : List Entry 
   , alertMessage : Maybe String
+  , nameInput : String
   }
 
 type alias Entry =
@@ -38,10 +39,11 @@ type alias Score =
 
 initialModel : Model
 initialModel = 
-  { name = "Zeljko"
+  { name = "Anonymous"
   , gameNumber = 1
   , entries = []
   , alertMessage = Nothing
+  , nameInput = ""
   }
 
 
@@ -56,11 +58,22 @@ type Msg
   | CloseAlert
   | ShareScore
   | NewScore (Result Http.Error Score)
+  | SetNameInput String
+  | SaveName
+  | CancelName
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
   case msg of
+    SaveName ->
+      ( { model | name = model.nameInput, nameInput = "" }, Cmd.none )
+
+    CancelName ->
+      ( { model | nameInput = "" }, Cmd.none )
+
+    SetNameInput value ->
+      ( { model | nameInput = value }, Cmd.none )
     NewRandom randomNumber ->
       ( { model | gameNumber = randomNumber }, Cmd.none )
 
@@ -193,6 +206,7 @@ view model =
   [ viewHeader "Buzzword Bingo"
   , viewPlayer model.name model.gameNumber
   , viewAlertMessage model.alertMessage
+  , viewNameInput model
   , viewEntryList model.entries
   , viewScore ( sumMarkedPoints model.entries )
   , div [ class "button-group" ] 
@@ -282,6 +296,21 @@ viewScore score =
       , span [ class "value" ] [ text (toString score) ]
       ]
 
+
+viewNameInput : Model -> Html Msg
+viewNameInput model =
+  div [ class "name-input" ] 
+      [ input
+          [ type_ "text"
+          , placeholder "Who's playing?"
+          , autofocus True
+          , value model.nameInput
+          , onInput SetNameInput
+          ]
+          [  ]
+        , button [ onClick SaveName ] [ text "Save" ]
+        , button [ onClick CancelName ] [ text "Cancel" ]
+      ]
 
 
 main : Program Never Model Msg
