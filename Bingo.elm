@@ -11,6 +11,7 @@ import Json.Encode as Encode
 
 -- MODEL
 
+type GameState = EnteringName | Playing
 
 type alias Model =
   { name : PlayerName
@@ -18,6 +19,7 @@ type alias Model =
   , entries : List Entry 
   , alertMessage : Maybe String
   , nameInput : String
+  , gameState : GameState
   }
 
 type alias Entry =
@@ -44,6 +46,7 @@ initialModel =
   , entries = []
   , alertMessage = Nothing
   , nameInput = ""
+  , gameState = EnteringName
   }
 
 
@@ -61,16 +64,22 @@ type Msg
   | SetNameInput String
   | SaveName
   | CancelName
+  | ChangeGameState GameState
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
   case msg of
+    ChangeGameState state ->
+      ( { model | gameState = state }, Cmd.none )
+
     SaveName ->
-      ( { model | name = model.nameInput, nameInput = "" }, Cmd.none )
+      ( { model | name = model.nameInput, 
+                  nameInput = "",
+                  gameState = Playing }, Cmd.none )
 
     CancelName ->
-      ( { model | nameInput = "" }, Cmd.none )
+      ( { model | nameInput = "", gameState = Playing }, Cmd.none )
 
     SetNameInput value ->
       ( { model | nameInput = value }, Cmd.none )
@@ -233,21 +242,14 @@ hasZeroScore : Model -> Bool
 hasZeroScore model =
   (sumMarkedPoints model.entries) == 0
 
-playerInfo : PlayerName -> GameNumber -> String
-playerInfo name gameNumber = 
-  name ++ " game number #" ++ (toString gameNumber)
-
 
 viewPlayer : PlayerName -> GameNumber -> Html Msg
 viewPlayer name gameNumber = 
-  let
-      playerInfoText =
-        playerInfo name gameNumber
-        |> String.toUpper 
-        |> text
-  in
-     h2 [ id "info", class "classy" ] 
-     [ playerInfoText ]
+   h2 [ id "info", class "classy" ] 
+   [ a [ href "#", onClick (ChangeGameState EnteringName) ] 
+     [ text name ]
+   , text (" - Game #" ++ (toString gameNumber))
+   ]
 
 
 viewHeader : String -> Html Msg
@@ -299,18 +301,22 @@ viewScore score =
 
 viewNameInput : Model -> Html Msg
 viewNameInput model =
-  div [ class "name-input" ] 
-      [ input
-          [ type_ "text"
-          , placeholder "Who's playing?"
-          , autofocus True
-          , value model.nameInput
-          , onInput SetNameInput
+  case model.gameState of
+    EnteringName ->
+      div [ class "name-input" ] 
+          [ input
+              [ type_ "text"
+              , placeholder "Who's playing?"
+              , autofocus True
+              , value model.nameInput
+              , onInput SetNameInput
+              ]
+              [  ]
+            , button [ onClick SaveName ] [ text "Save" ]
+            , button [ onClick CancelName ] [ text "Cancel" ]
           ]
-          [  ]
-        , button [ onClick SaveName ] [ text "Save" ]
-        , button [ onClick CancelName ] [ text "Cancel" ]
-      ]
+    Playing -> 
+      text ""
 
 
 main : Program Never Model Msg
